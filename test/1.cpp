@@ -7,11 +7,14 @@ BOOM :)
 int main() {
     freopen("1.in", "r", stdin);
     freopen("1.out", "w", stdout);
+    setbuf(stdout, NULL);
 //    srand(0);
 //    clock_t start, end;
 //    start = clock();
     ESet<long long> s[25];
+//    std::cout << "successfully define eset" << std::endl;
     ESet<long long>::iterator it;
+//    std::cout << "successfully define iterator" << std::endl;
     int op, lst=0, it_a=-1, valid = 0, cnt=1;
     while (scanf("%d", &op) != EOF) {
         long long a, b, c;
@@ -22,11 +25,13 @@ int main() {
             case 0: {
                 scanf("%lld%lld", &a, &b);
                 auto p=s[a].emplace(b);
+                //   std::cout << "successful emplace" << std::endl;
                 if(p.second) {
                 	it_a = a;
                     it = p.first;
                     valid = 1;
                 }
+//                  std::cout << "emplace second valid" << std::endl;
                 break;
             }
             case 1:
@@ -53,6 +58,7 @@ int main() {
             }
             case 4:
                 scanf("%lld%lld%lld", &a, &b, &c);
+//                std::cout << (s[a].find(c) == s[a].end() ? 0 : 1) << std::endl;
                 printf("%d\n", s[a].range(b, c));
                 cnt++;
                 break;

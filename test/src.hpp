@@ -40,145 +40,160 @@ public:
         return node;
     }
 
-    void RotateL(Node *&node) { //<-
-        Node *rightchild = node->_right;
-        node->_right = rightchild->_left;
-        if(rightchild->_left)
-            rightchild->_left->_parent = node;
-        rightchild->_parent = node->_parent;
-        if(!node->_parent)
-            _root = rightchild;
-        else if(node->_parent->_left == node)
-            node->_parent->_left = rightchild;
-        else
-            node->_parent->_right = rightchild;
-        rightchild->_left = node;
-        node->_parent = rightchild;
-        rightchild->_size = node->_size;
-        node->_size = 1 + (node->_left ? node->_left->_size : 0) + (node->_right ? node->_right->_size : 0);
+    void RotateL(Node *node) {
+        Node *rightChild = node->_right;
+        node->_right = rightChild->_left;
+        if (node->_right) 
+            node->_right->_parent = node;
+        rightChild->_parent = node->_parent;
+        if (!node->_parent) 
+            _root = rightChild;
+        else if (node == node->_parent->_left) 
+            node->_parent->_left = rightChild;
+        else 
+            node->_parent->_right = rightChild; 
+        rightChild->_left = node;
+        node->_parent = rightChild;
+        rightChild->_size = node->_size;
+        node->_size = 1 + 
+            (node->_left ? node->_left->_size : 0) + 
+            (node->_right ? node->_right->_size : 0);
     }
-    void RotateR(Node *&node) { //->
-        #ifdef EXISTENCE
-        if(!node)
-            std::cerr << "rotateR of invalid node"<< std::endl;
-        #endif
-        Node *leftchild = node->_left;
-        node->_left = leftchild->_right;
-        if(leftchild->_right)
-            leftchild->_right->_parent = node;
-        leftchild->_parent = node->_parent;
-        if(!node->_parent)
-            _root = leftchild;
-        else if(node->_parent->_left == node)
-            node->_parent->_left = leftchild;
-        else
-            node->_parent->_right = leftchild;
-        leftchild->_right = node;
-        node->_parent = leftchild;
-        leftchild->_size = node->_size;
-        node->_size = 1 + (node->_left ? node->_left->_size : 0) + (node->_right ? node->_right->_size : 0);
+    void RotateR(Node *node) {
+        Node *leftChild = node->_left;
+        node->_left = leftChild->_right;
+        if (node->_left) 
+            node->_left->_parent = node;
+        leftChild->_parent = node->_parent;
+        if (!node->_parent) 
+            _root = leftChild;
+        else if (node == node->_parent->_left) 
+            node->_parent->_left = leftChild;
+        else 
+            node->_parent->_right = leftChild;    
+        leftChild->_right = node;
+        node->_parent = leftChild;
+        leftChild->_size = node->_size;
+        node->_size = 1 + 
+            (node->_left ? node->_left->_size : 0) + 
+            (node->_right ? node->_right->_size : 0);
     }
-    void fixInsert(Node *&node) {
-        while(node != _root && node->_parent->_col == Red) {
-            if(node->_parent == node->_parent->_parent->_left) {
-                Node *uncle = node->_parent->_parent->_right;
-                if(uncle && uncle->_col == Red) { // uncle red
-                    node->_parent->_col = Black;
+    void fixInsert(Node *node) {
+        while (node != _root && node->_parent->_col == Red) {
+            Node *parent = node->_parent;
+            Node *grandparent = parent->_parent;
+            
+            if (parent == grandparent->_left) {
+                Node *uncle = grandparent->_right;
+                
+                if (uncle && uncle->_col == Red) {  // Case 1: Uncle is red
+                    parent->_col = Black;
                     uncle->_col = Black;
-                    node->_parent->_parent->_col = Red;
-                    node = node->_parent->_parent;
-                }else { // uncle black
-                    if(node == node->_parent->_right) {
-                        node = node->_parent;
-                        RotateL(node);
+                    grandparent->_col = Red;
+                    node = grandparent;
+                } 
+                else {
+                    if (node == parent->_right) {  // Case 2: LR (Left-Right)
+                        RotateL(parent);
+                        node = parent;
+                        parent = node->_parent;
                     }
-                    node->_parent->_col = Black;
-                    node->_parent->_parent->_col = Red;
-                    RotateR(node->_parent->_parent);
+                    // Case 3: LL (Left-Left)
+                    parent->_col = Black;
+                    grandparent->_col = Red;
+                    RotateR(grandparent);
                 }
-            } else {
-                Node* uncle = node->_parent->_parent->_left;
-                if (uncle && uncle->_col == Red) {
-                    node->_parent->_col = Black;
+            } 
+            else {  // Symmetric case (parent is right child)
+                Node *uncle = grandparent->_left;
+                
+                if (uncle && uncle->_col == Red) {  // Case 1: Uncle is red
+                    parent->_col = Black;
                     uncle->_col = Black;
-                    node->_parent->_parent->_col = Red;
-                    node = node->_parent->_parent;
-                } else {
-                    if (node == node->_parent->_left) {
-                        node = node->_parent;
-                        RotateR(node);
+                    grandparent->_col = Red;
+                    node = grandparent;
+                } 
+                else {
+                    if (node == parent->_left) {  // Case 2: RL (Right-Left)
+                        RotateR(parent);
+                        node = parent;
+                        parent = node->_parent;
                     }
-                    node->_parent->_col = Black;
-                    node->_parent->_parent->_col = Red;
-                    RotateL(node->_parent->_parent);
+                    // Case 3: RR (Right-Right)
+                    parent->_col = Black;
+                    grandparent->_col = Red;
+                    RotateL(grandparent);
                 }
             }
         }
-        _root->_col = Black;
+        _root->_col = Black;  // Ensure root is black
     }
     void fixDelete(Node *node, Node *parent) {
         while (node != _root && (!node || node->_col == Black)) {
             if (node == parent->_left) {
-                Node* sibling = parent->_right;
-                if (sibling->_col == Red) {
-                    // Case 1: sibling is red
-                    sibling->_col = Black;
+                Node *bro = parent->_right;
+                
+                if (bro->_col == Red) {  // Case 1: Brother is red
                     parent->_col = Red;
+                    bro->_col = Black;
                     RotateL(parent);
-                    sibling = parent->_right;
+                    bro = parent->_right;
                 }
-                if ((!sibling->_left || sibling->_left->_col == Black) &&
-                    (!sibling->_right || sibling->_right->_col == Black)) {
-                    // Case 2: both sibling's children are black
-                    sibling->_col = Red;
+                
+                if ((!bro->_left || bro->_left->_col == Black) && 
+                    (!bro->_right || bro->_right->_col == Black)) {  // Case 2: Both nephews black
+                    bro->_col = Red;
                     node = parent;
                     parent = node->_parent;
-                } else {
-                    if (!sibling->_right || sibling->_right->_col == Black) {
-                        // Case 3: sibling's right child is black
-                        if (sibling->_left) sibling->_left->_col = Black;
-                        sibling->_col = Red;
-                        RotateR(sibling);
-                        sibling = parent->_right;
+                } 
+                else {
+                    if (!bro->_right || bro->_right->_col == Black) {  // Case 3: Right nephew black
+                        bro->_left->_col = Black;
+                        bro->_col = Red;
+                        RotateR(bro);
+                        bro = parent->_right;
                     }
-                    // Case 4: sibling's right child is red
-                    sibling->_col = parent->_col;
+                    // Case 4: Right nephew red
+                    bro->_col = parent->_col;
                     parent->_col = Black;
-                    if (sibling->_right) sibling->_right->_col = Black;
+                    bro->_right->_col = Black;
                     RotateL(parent);
                     node = _root;
                 }
-            } else {
-                // Symmetric cases
-                Node* sibling = parent->_left;
-                if (sibling->_col == Red) {
-                    sibling->_col = Black;
+            } 
+            else {  // Symmetric case (node is right child)
+                Node *bro = parent->_left;
+                
+                if (bro->_col == Red) {  // Case 1: Brother is red
                     parent->_col = Red;
+                    bro->_col = Black;
                     RotateR(parent);
-                    sibling = parent->_left;
+                    bro = parent->_left;
                 }
-                if ((!sibling->_right || sibling->_right->_col == Black) &&
-                    (!sibling->_left || sibling->_left->_col == Black)) {
-                    sibling->_col = Red;
+                
+                if ((!bro->_left || bro->_left->_col == Black) && 
+                    (!bro->_right || bro->_right->_col == Black)) {  // Case 2: Both nephews black
+                    bro->_col = Red;
                     node = parent;
                     parent = node->_parent;
-                } else {
-                    if (!sibling->_left || sibling->_left->_col == Black) {
-                        if (sibling->_right) sibling->_right->_col = Black;
-                        sibling->_col = Red;
-                        RotateL(sibling);
-                        sibling = parent->_left;
+                } 
+                else {
+                    if (!bro->_left || bro->_left->_col == Black) {  // Case 3: Left nephew black
+                        bro->_right->_col = Black;
+                        bro->_col = Red;
+                        RotateL(bro);
+                        bro = parent->_left;
                     }
-                    sibling->_col = parent->_col;
+                    // Case 4: Left nephew red
+                    bro->_col = parent->_col;
                     parent->_col = Black;
-                    if (sibling->_left) sibling->_left->_col = Black;
+                    bro->_left->_col = Black;
                     RotateR(parent);
                     node = _root;
                 }
             }
         }
-        if (node) 
-            node->_col = Black;
+        if (node) node->_col = Black;  // Ensure node is black
     }
 
     class iterator {
@@ -225,30 +240,37 @@ public:
             return old;
         }
         iterator &operator--() {
-            if(*this == _tree->begin())
-                throw std::out_of_range("invalid minus");
-            if(!_node) {
+            if (!_node) {
                 _node = _tree->_root;
-                while(_node && _node->_right)
+                while (_node && _node->_right)
                     _node = _node->_right;
-            }else if(_node->_left) {
-                _node = _node->_left;
-                while(_node->_right)
-                    _node = _node->_right;
-            }else {
-                Node *newNode = _node->_parent;
-                while(newNode && _node == newNode->_left) {
-                    _node = newNode;
-                    newNode = newNode->_parent;
-                }
-                _node = newNode;
+                return *this;
             }
+            if (_node == _tree->_minNode)
+                return *this;
+            if (_node->_left) {
+                _node = _node->_left;
+                while (_node->_right)
+                    _node = _node->_right;
+            } else {
+                Node *parent = _node->_parent;
+                while (parent && _node == parent->_left) {
+                    _node = parent;
+                    parent = parent->_parent;
+                }
+                _node = parent;
+            }  
             return *this;
         }
 
         const T &operator*() {
-            if(!_node)
+            if(!_node) {
+                #ifdef EXISTENCE
+                std::cout << "* of invalid node" << std::endl;
+                #endif
                 throw std::out_of_range("invalid node");
+            }
+                
             return _node->_data;
         }
         bool operator==(const iterator &other) const {
@@ -318,92 +340,112 @@ public:
         return *this;
     }
 
-    template< class... Args >
-    std::pair<iterator, bool> emplace( Args&&... args ) {
-        T value(std::forward<Args>(args)...);
-        return insert(value);
-    } 
-    std::pair<iterator, bool> insert(const T& value) {
+private:
+    template <typename U>
+    std::pair<iterator, bool> insert_impl(U&& value) {
         if (!_root) {
-            _root = new Node(value, Black, nullptr, nullptr, nullptr);
+            _root = new Node(std::forward<U>(value), Black, nullptr, nullptr, nullptr);
             _minNode = _root;
             _s = 1;
             return {iterator(this, _root), true};
         }
         Node* current = _root;
         Node* parent = nullptr;
+        bool is_left_child = false;
         while (current) {
             parent = current;
             if (compare(value, current->_data)) {
                 current = current->_left;
+                is_left_child = true;
             } else if (compare(current->_data, value)) {
                 current = current->_right;
+                is_left_child = false;
             } else {
-                return {iterator(this, current), false}; // already exists
+                return {iterator(this, current), false};
             }
         }
-
-        Node* newNode = new Node(value, Red, parent, nullptr, nullptr);
-        if (compare(value, parent->_data)) {
+        Node* newNode = new Node(std::forward<U>(value), Red, parent, nullptr, nullptr);
+        if (is_left_child) {
             parent->_left = newNode;
-            if (parent == _minNode)
+            if (parent == _minNode) {
                 _minNode = newNode;
+            }
         } else {
             parent->_right = newNode;
         }
+        updateSizesAfterInsert(parent);
         _s++;
-        for (Node* p = parent; p; p = p->_parent)
-            p->_size++;
         fixInsert(newNode);
         return {iterator(this, newNode), true};
     }
+    void updateSizesAfterInsert(Node* node) {
+        while (node) {
+            node->_size++;
+            node = node->_parent;
+        }
+    }
+public:
+    template< class... Args >
+    std::pair<iterator, bool> emplace( Args&&... args ) {
+        return insert_impl(T(std::forward<Args>(args)...));
+    }
+    std::pair<iterator, bool> insert(const T& value) { return insert_impl(value);}
+    std::pair<iterator, bool> insert(T&& value) { return insert_impl(std::move(value));}
 
     void transplant(Node *u, Node *v) {
-        if(!u->_parent) {
+        if (!u->_parent) {
             _root = v;
-        }else if(u == u->_parent->_left) {
+        } else if (u == u->_parent->_left) {
             u->_parent->_left = v;
-        }else {
+        } else {
             u->_parent->_right = v;
         }
-        if(v)
+        if (v) {
             v->_parent = u->_parent;
+            v->_size = u->_size;
+        }
+        Node *p = u->_parent;
+        while (p) {
+            p->_size = 1 + (p->_left ? p->_left->_size : 0) + (p->_right ? p->_right->_size : 0);
+            p = p->_parent;
+        }
     }
     size_t erase(const T& key) {
         Node *node = _root;
-        while(node) {
-            if(compare(key, node->_data)) {
+        // 查找要删除的节点
+        while (node) {
+            if (compare(key, node->_data)) {
                 node = node->_left;
-            }else if(compare(node->_data, key)) {
+            } else if (compare(node->_data, key)) {
                 node = node->_right;
-            }else {
+            } else {
                 break;
             }
         }
-        if(!node)
-            return 0;
-        if(node == _minNode) {
-            _minNode = node->_right ? findMin(node->_right) : node->_parent;
+        if (!node) return 0; // 没找到要删除的节点
+        // 更新_minNode
+        if (node == _minNode) {
+            _minNode = (node->_right ? findMin(node->_right) : node->_parent);
         }
-        Node *child, *parent;
-        Color originalColor = node->_col;
-        if(!node->_left) {
+        Node *child = nullptr;
+        Node *parent = nullptr;
+        Color original_col = node->_col;
+        // 情况1: 只有一个子节点或没有子节点
+        if (!node->_left) {
             child = node->_right;
             parent = node->_parent;
             transplant(node, node->_right);
-        }else if(!node->_right) {
+        } else if (!node->_right) {
             child = node->_left;
             parent = node->_parent;
             transplant(node, node->_left);
-        }else {
+        } else {
+            // 情况2: 有两个子节点
             Node *successor = findMin(node->_right);
-            originalColor = successor->_col;
+            original_col = successor->_col;
             child = successor->_right;
             parent = successor;
-            if(successor->_parent == node) {
-                if(child)
-                    child->_parent = parent;
-            }else {
+            if (successor->_parent != node) {
                 transplant(successor, successor->_right);
                 successor->_right = node->_right;
                 successor->_right->_parent = successor;
@@ -415,10 +457,23 @@ public:
             successor->_col = node->_col;
             successor->_size = node->_size;
         }
-        for (Node *p = parent; p; p = p->_parent)
-            p->_size--;
-        if(originalColor == Black)
+        // 更新父节点的size
+        Node *p = parent;
+        while (p) {
+            p->_size = 1 + (p->_left ? p->_left->_size : 0) + (p->_right ? p->_right->_size : 0);
+            p = p->_parent;
+        }
+        // 如果删除的是黑色节点，需要修复
+        if (original_col == Black) {
             fixDelete(child, parent);
+        }
+        // 确保_minNode正确
+        if (_root && !_minNode) {
+            _minNode = findMin(_root);
+        } else if (_minNode && _minNode->_parent && _minNode == _minNode->_parent->_right) {
+            _minNode = _minNode->_parent;
+        }
+        
         delete node;
         _s--;
         return 1;
@@ -443,24 +498,20 @@ public:
         else
             return rank(r) - rank(l) + (find(l) == end() ? 0 : 1);
     }
-    size_t rank(const T& key) const { // node下面的子点的个数
+    size_t rank(const T& key) const { // node下面的子点的个数，包含node本身
         size_t count = 0;
         Node *current = _root;
-        while(current) {
-            if(compare(key, current->_data)) { // key < current
+        while (current) {
+            if (compare(key, current->_data)) { // key < current
                 current = current->_left;
-            }else if(compare(current->_data, key)) { // key > current
+            } else { // key >= current
                 count += 1 + (current->_left ? current->_left->_size : 0);
                 current = current->_right;
-            }else {
-                count += (current->_left ? current->_left->_size : 0);
-                break;
             }
         }
         return count;
     }
     
-
     size_t size() const noexcept{
         return _s;
     }
