@@ -17,9 +17,8 @@ class Node{
         Node<T>* _parent;
         Node<T>* _left;
         Node<T>* _right;
-        size_t _size;
 
-        Node(T data, Color col, Node* parent, Node* left, Node* right) : _data(data), _col(col), _parent(parent), _left(left), _right(right), _size(1){}
+        Node(T data, Color col, Node* parent, Node* left, Node* right) : _data(data), _col(col), _parent(parent), _left(left), _right(right){}
         Node(T data) : Node(data, Red, nullptr, nullptr, nullptr) {}
         ~Node() {}
 };
@@ -54,10 +53,6 @@ public:
             node->_parent->_right = rightChild; 
         rightChild->_left = node;
         node->_parent = rightChild;
-        rightChild->_size = node->_size;
-        node->_size = 1 + 
-            (node->_left ? node->_left->_size : 0) + 
-            (node->_right ? node->_right->_size : 0);
     }
     void RotateR(Node *node) {
         Node *leftChild = node->_left;
@@ -73,10 +68,6 @@ public:
             node->_parent->_right = leftChild;    
         leftChild->_right = node;
         node->_parent = leftChild;
-        leftChild->_size = node->_size;
-        node->_size = 1 + 
-            (node->_left ? node->_left->_size : 0) + 
-            (node->_right ? node->_right->_size : 0);
     }
     void fixInsert(Node *node) {
         while (node != _root && node->_parent->_col == Red) {
@@ -304,7 +295,6 @@ public:
         Node *newNode = new Node(node->_data, node->_col, parent, nullptr, nullptr);
         newNode->_left = copyTree(node->_left, newNode);
         newNode->_right = copyTree(node->_right, newNode);
-        newNode->_size = node->_size;
         return newNode;
     }
     ESet(const ESet& other) :compare(other.compare){
@@ -373,17 +363,11 @@ private:
         } else {
             parent->_right = newNode;
         }
-        updateSizesAfterInsert(parent);
         _s++;
         fixInsert(newNode);
         return {iterator(this, newNode), true};
     }
-    void updateSizesAfterInsert(Node* node) {
-        while (node) {
-            node->_size++;
-            node = node->_parent;
-        }
-    }
+    
 public:
     template< class... Args >
     std::pair<iterator, bool> emplace( Args&&... args ) {
@@ -402,17 +386,10 @@ public:
         }
         if (v) {
             v->_parent = u->_parent;
-            v->_size = u->_size;
-        }
-        Node *p = u->_parent;
-        while (p) {
-            p->_size = 1 + (p->_left ? p->_left->_size : 0) + (p->_right ? p->_right->_size : 0);
-            p = p->_parent;
         }
     }
     size_t erase(const T& key) {
         Node *node = _root;
-        // 查找要删除的节点
         while (node) {
             if (compare(key, node->_data)) {
                 node = node->_left;
@@ -422,15 +399,13 @@ public:
                 break;
             }
         }
-        if (!node) return 0; // 没找到要删除的节点
-        // 更新_minNode
+        if (!node) return 0; 
         if (node == _minNode) {
             _minNode = (node->_right ? findMin(node->_right) : node->_parent);
         }
         Node *child = nullptr;
         Node *parent = nullptr;
         Color original_col = node->_col;
-        // 情况1: 只有一个子节点或没有子节点
         if (!node->_left) {
             child = node->_right;
             parent = node->_parent;
@@ -440,7 +415,6 @@ public:
             parent = node->_parent;
             transplant(node, node->_left);
         } else {
-            // 情况2: 有两个子节点
             Node *successor = findMin(node->_right);
             original_col = successor->_col;
             child = successor->_right;
@@ -455,25 +429,15 @@ public:
             successor->_left = node->_left;
             successor->_left->_parent = successor;
             successor->_col = node->_col;
-            successor->_size = node->_size;
         }
-        // 更新父节点的size
-        Node *p = parent;
-        while (p) {
-            p->_size = 1 + (p->_left ? p->_left->_size : 0) + (p->_right ? p->_right->_size : 0);
-            p = p->_parent;
-        }
-        // 如果删除的是黑色节点，需要修复
         if (original_col == Black) {
             fixDelete(child, parent);
         }
-        // 确保_minNode正确
         if (_root && !_minNode) {
             _minNode = findMin(_root);
         } else if (_minNode && _minNode->_parent && _minNode == _minNode->_parent->_right) {
             _minNode = _minNode->_parent;
         }
-        
         delete node;
         _s--;
         return 1;
@@ -502,19 +466,6 @@ public:
         size_t count = 0;
         for (auto it = first; it != last; ++it) {
             ++count;
-        }
-        return count;
-    }
-    size_t rank(const T& key) const { // node下面的子点的个数，包含node本身
-        size_t count = 0;
-        Node *current = _root;
-        while (current) {
-            if (compare(key, current->_data)) { // key < current
-                current = current->_left;
-            } else { // key >= current
-                count += 1 + (current->_left ? current->_left->_size : 0);
-                current = current->_right;
-            }
         }
         return count;
     }

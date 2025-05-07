@@ -7,6 +7,7 @@ BOOM :)
 int main() {
     freopen("2.in", "r", stdin);
     freopen("2.out", "w", stdout);
+    setbuf(stdout, NULL);
 //    srand(0);
 //    clock_t start, end;
 //    start = clock();
